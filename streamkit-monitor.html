@@ -1,0 +1,109 @@
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+<body>
+	
+	   <div style="text-align:center">
+	   		<h1>Jesusmarket Streamkit Monitor</h1>
+	   </div>
+	   
+	   <div style="text-align:center" id="results-status">
+	   
+	   </div>
+	   
+	   <div style="text-align:center" id="results-highest">
+       		
+       </div>
+       
+       <div>
+           <div id="chart_div" style="width: 1200px; height: 600px;"></div>
+       </div>
+
+<script>
+
+$(document).ready(function() {
+	google.charts.load('current', {'packages':['corechart']});
+	
+	var viewersList = [0];
+	var graphArray = [['Time (mins)', 'Views'],
+	             ['0:00', 0],
+    			]
+	
+	loadStats(graphArray, viewersList); 
+	drawChart(graphArray);
+	getHighest(viewersList);
+	
+	setInterval(function(){
+		loadStats(graphArray, viewersList); 
+		drawChart(graphArray);
+		getHighest(viewersList);
+		}, 
+		60000
+	);
+	
+	
+});
+
+function getTime() {
+	
+    var date = new Date();
+    var hour = date.getHours();
+    var min = date.getMinutes();
+    return hour+":"+min;
+	
+}
+
+function getHighest(viewersList) {
+ 	var highest = Math.max.apply(null, viewersList);
+ 	$("#results-highest").html("<h3>Highest number of viewers: "+highest+"</h3>");
+}
+
+function printStatus(status){
+	$("#results-status").html("<h2>Status: "+status+"</h2>");
+}
+
+function loadStats(graphArray, viewersList) {
+	
+	$.ajax({ 
+	    type: 'GET', 
+	    url: 'get-streamkit-json.php',
+	    dataType: 'json',
+	    data: { get_param: 'value' },
+	    success: function (data) { 
+	        var viewers = parseInt(data.viewers);
+	        
+	        buildData(graphArray, getTime(), viewers, viewersList);
+	        printStatus(data.status);
+	    }
+	});
+	
+}
+
+function buildData(graphArray, time, viewers, viewersList) {
+	var secs = time.toString();
+	
+	viewersList.push(viewers);
+    graphArray.push([secs,  viewers]);
+    
+}
+
+function drawChart(dataArray) {
+	
+	google.charts.setOnLoadCallback(drawChart);
+    function drawChart() {
+      var data = google.visualization.arrayToDataTable(dataArray);
+
+      var options = {
+        title: 'Viewers Stats',
+        hAxis: {title: 'Time (hours:mins)',  titleTextStyle: {color: '#333'}},
+        vAxis: {minValue: 0}
+      };
+
+      var chart = new google.visualization.AreaChart(document.getElementById('chart_div'));
+      chart.draw(data, options);
+    }
+	
+}
+      
+</script>
+
+</body> 
